@@ -11,7 +11,9 @@ import {
   Settings,
   Crown,
   Bot,
+  LogOut,
 } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
@@ -115,6 +117,18 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
             <span className="text-xs text-muted-foreground">Free Plan</span>
           )}
         </div>
+        <button
+          type="button"
+          onClick={async () => {
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            window.location.href = '/login';
+          }}
+          className="ml-auto text-muted-foreground hover:text-foreground transition-colors p-1"
+          title="Sign out"
+        >
+          <LogOut className="size-4" />
+        </button>
       </div>
     </div>
   )
