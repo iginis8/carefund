@@ -53,6 +53,7 @@ export interface TaxCredit {
   eligibility_criteria: Record<string, unknown>;
   irs_form: string;
   irs_link: string;
+  state?: string; // If set, only show for users in this state. null/undefined = federal (all states)
 }
 
 export type SavingsGoalType = 'emergency' | 'retirement_catchup' | 'care_fund' | 'general';
