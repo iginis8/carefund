@@ -350,7 +350,7 @@ export default function ExpensesPage() {
                 {filteredExpenses.map((expense) => (
                   <TableRow key={expense.id}>
                     <TableCell>
-                      {new Date(expense.date + 'T00:00:00').toLocaleDateString('en-US', {
+                      {new Date(expense.date.split('T')[0] + 'T12:00:00').toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                       })}

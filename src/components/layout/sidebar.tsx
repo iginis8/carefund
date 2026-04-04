@@ -38,12 +38,13 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
   const pathname = usePathname()
   const profile = store.getProfile()
   const premium = store.isPremium()
-  const initials = profile.full_name
+  const initials = (profile.full_name || 'U')
     .split(' ')
+    .filter(Boolean)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2)
+    .slice(0, 2) || 'U'
 
   return (
     <div className={cn('flex h-full flex-col bg-sidebar text-sidebar-foreground', className)}>
@@ -120,9 +121,12 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
         <button
           type="button"
           onClick={async () => {
-            const supabase = createClient();
-            await supabase.auth.signOut();
-            window.location.href = '/login';
+            try {
+              const supabase = createClient();
+              await supabase.auth.signOut();
+            } catch {} finally {
+              window.location.href = '/login';
+            }
           }}
           className="ml-auto text-muted-foreground hover:text-foreground transition-colors p-1"
           title="Sign out"

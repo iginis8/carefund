@@ -127,7 +127,7 @@ export default function Home() {
               Sign In
             </Link>
             <Link
-              href="/onboarding"
+              href="/signup"
               className={cn(buttonVariants({ size: "sm" }), "gap-1.5")}
             >
               Find My Money
@@ -136,7 +136,7 @@ export default function Home() {
           </nav>
           <div className="flex items-center gap-2 md:hidden">
             <Link
-              href="/onboarding"
+              href="/signup"
               className={cn(buttonVariants({ size: "sm" }), "gap-1.5")}
             >
               Find My Money
@@ -168,7 +168,7 @@ export default function Home() {
             </p>
             <div className="mt-10 flex flex-col items-center gap-4">
               <Link
-                href="/onboarding"
+                href="/signup"
                 className={cn(
                   buttonVariants({ size: "lg" }),
                   "gap-2 text-base px-8 h-12 text-lg"
@@ -284,7 +284,7 @@ export default function Home() {
             </div>
             <div className="mt-10 text-center">
               <Link
-                href="/onboarding"
+                href="/signup"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "gap-2 text-base"
@@ -351,7 +351,7 @@ export default function Home() {
             </p>
             <div className="mt-10 flex flex-col items-center gap-4">
               <Link
-                href="/onboarding"
+                href="/signup"
                 className={cn(
                   buttonVariants({ size: "lg" }),
                   "gap-2 text-base px-8 h-12 text-lg"

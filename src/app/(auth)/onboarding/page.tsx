@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { store } from '@/lib/store';
+import { createClient } from '@/lib/supabase/client';
 import { CAREGIVER_TYPES, US_STATES, CONDITIONS } from '@/lib/constants';
 import type { CaregiverType, EmploymentStatus } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,12 +58,35 @@ export default function OnboardingPage() {
 
   const estimated = estimateSavings(formData);
 
-  function handleFinish() {
+  async function handleFinish() {
+    // Save to local store
     store.updateProfile({
       ...formData,
       caregiver_type: formData.caregiver_type as CaregiverType,
       onboarding_completed: true,
     });
+
+    // Save to Supabase
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('profiles').update({
+          full_name: formData.full_name,
+          caregiver_type: formData.caregiver_type,
+          employment_status: formData.employment_status,
+          annual_income: formData.annual_income,
+          care_hours_per_week: formData.care_hours_per_week,
+          care_recipient_relationship: formData.care_recipient_relationship,
+          care_recipient_conditions: formData.care_recipient_conditions,
+          state: formData.state,
+          onboarding_completed: true,
+        }).eq('id', user.id);
+      }
+    } catch {
+      // Continue even if Supabase save fails — local store has the data
+    }
+
     router.push('/dashboard');
   }
 

@@ -13,7 +13,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
@@ -25,29 +25,32 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Refresh the session
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Protect dashboard routes — redirect to login if not authenticated
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/dashboard') ||
-    request.nextUrl.pathname.startsWith('/expenses') ||
-    request.nextUrl.pathname.startsWith('/money') ||
-    request.nextUrl.pathname.startsWith('/benefits') ||
-    request.nextUrl.pathname.startsWith('/assistant') ||
-    request.nextUrl.pathname.startsWith('/settings') ||
-    request.nextUrl.pathname.startsWith('/savings') ||
-    request.nextUrl.pathname.startsWith('/planning') ||
-    request.nextUrl.pathname.startsWith('/tax');
+  const pathname = request.nextUrl.pathname;
 
-  if (!user && isAuthRoute) {
+  // Routes that require authentication
+  const protectedRoutes = [
+    '/dashboard', '/expenses', '/money', '/benefits',
+    '/assistant', '/settings', '/savings', '/planning', '/tax',
+  ];
+  const isProtected = protectedRoutes.some(r => pathname === r || pathname.startsWith(r + '/'));
+
+  // /onboarding requires auth but is allowed before onboarding is complete
+  const isOnboarding = pathname === '/onboarding';
+
+  // Auth pages (login/signup)
+  const isAuthPage = pathname === '/login' || pathname === '/signup';
+
+  // Not logged in → redirect to login (except public pages)
+  if (!user && (isProtected || isOnboarding)) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
-  // Redirect logged-in users away from auth pages
-  const isLoginPage = request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup';
-  if (user && isLoginPage) {
+  // Logged in → skip auth pages
+  if (user && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
