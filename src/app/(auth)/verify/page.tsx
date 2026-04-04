@@ -20,7 +20,7 @@ function VerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get('email') || '';
-  const [code, setCode] = useState(['', '', '', '', '', '', '', '']);
+  const [code, setCode] = useState(['', '', '', '', '', '']);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resent, setResent] = useState(false);
@@ -40,12 +40,12 @@ function VerifyContent() {
     setCode(newCode);
 
     // Auto-advance to next input
-    if (value && index < 7) {
+    if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-submit when all 8 digits entered
-    if (value && index === 7 && newCode.every(c => c)) {
+    // Auto-submit when all 6 digits entered
+    if (value && index === 5 && newCode.every(c => c)) {
       handleVerify(newCode.join(''));
     }
   }
@@ -58,11 +58,11 @@ function VerifyContent() {
 
   function handlePaste(e: React.ClipboardEvent) {
     e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 8);
-    if (pasted.length === 8) {
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pasted.length === 6) {
       const newCode = pasted.split('');
       setCode(newCode);
-      inputRefs.current[7]?.focus();
+      inputRefs.current[5]?.focus();
       handleVerify(pasted);
     }
   }
@@ -117,7 +117,7 @@ function VerifyContent() {
         </div>
         <CardTitle>Check your email</CardTitle>
         <p className="text-sm text-muted-foreground mt-2">
-          We sent an 8-digit code to<br />
+          We sent a 6-digit code to<br />
           <span className="font-medium text-foreground">{email}</span>
         </p>
       </CardHeader>
@@ -146,7 +146,7 @@ function VerifyContent() {
               value={digit}
               onChange={e => handleChange(i, e.target.value)}
               onKeyDown={e => handleKeyDown(i, e)}
-              className="w-10 h-12 text-center text-lg font-bold"
+              className="w-12 h-14 text-center text-xl font-bold"
               disabled={loading}
             />
           ))}
