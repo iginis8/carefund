@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Mail, CheckCircle2 } from 'lucide-react';
+import { Loader2, Mail, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+
+const CODE_EXPIRY_SECONDS = 300; // 5 minutes
 
 export default function VerifyPage() {
   return (
@@ -24,6 +26,8 @@ function VerifyContent() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [resent, setResent] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(CODE_EXPIRY_SECONDS);
+  const [expired, setExpired] = useState(false);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Focus first input on mount
@@ -31,20 +35,45 @@ function VerifyContent() {
     inputRefs.current[0]?.focus();
   }, []);
 
+  // Countdown timer
+  useEffect(() => {
+    if (expired) return;
+    const interval = setInterval(() => {
+      setSecondsLeft(prev => {
+        if (prev <= 1) {
+          setExpired(true);
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [expired]);
+
+  function resetTimer() {
+    setSecondsLeft(CODE_EXPIRY_SECONDS);
+    setExpired(false);
+  }
+
+  function formatTime(s: number): string {
+    const min = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${min}:${sec.toString().padStart(2, '0')}`;
+  }
+
   function handleChange(index: number, value: string) {
-    if (value.length > 1) value = value.slice(-1); // Only take last char
-    if (!/^[0-9]*$/.test(value)) return; // Only digits
+    if (value.length > 1) value = value.slice(-1);
+    if (!/^[0-9]*$/.test(value)) return;
 
     const newCode = [...code];
     newCode[index] = value;
     setCode(newCode);
 
-    // Auto-advance to next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-submit when all 6 digits entered
     if (value && index === 5 && newCode.every(c => c)) {
       handleVerify(newCode.join(''));
     }
@@ -67,7 +96,12 @@ function VerifyContent() {
     }
   }
 
-  async function handleVerify(otp: string) {
+  const handleVerify = useCallback(async (otp: string) => {
+    if (expired) {
+      setError('Code expired. Please request a new one.');
+      return;
+    }
+
     setError('');
     setLoading(true);
 
@@ -81,17 +115,18 @@ function VerifyContent() {
 
     if (verifyError) {
       setError(verifyError.message);
-      setCode(['', '', '', '', '', '', '', '']);
+      setCode(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
       setLoading(false);
       return;
     }
 
     router.push('/onboarding');
-  }
+  }, [email, expired, router]);
 
   async function handleResend() {
     setResent(false);
+    setError('');
     const supabase = createClient();
 
     const { error: resendError } = await supabase.auth.resend({
@@ -103,9 +138,15 @@ function VerifyContent() {
       setError(resendError.message);
     } else {
       setResent(true);
+      setCode(['', '', '', '', '', '']);
+      resetTimer();
+      inputRefs.current[0]?.focus();
       setTimeout(() => setResent(false), 5000);
     }
   }
+
+  // Timer color: green > 2min, yellow > 1min, red < 1min
+  const timerColor = secondsLeft > 120 ? 'text-green-600' : secondsLeft > 60 ? 'text-amber-600' : 'text-destructive';
 
   return (
     <Card className="w-full">
@@ -121,7 +162,7 @@ function VerifyContent() {
           <span className="font-medium text-foreground">{email}</span>
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-5">
         {error && (
           <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive text-center">
             {error}
@@ -130,11 +171,18 @@ function VerifyContent() {
 
         {resent && (
           <div className="rounded-lg bg-green-50 border border-green-200 px-3 py-2 text-sm text-green-700 text-center flex items-center justify-center gap-2">
-            <CheckCircle2 className="h-4 w-4" /> Code resent!
+            <CheckCircle2 className="h-4 w-4" /> New code sent!
           </div>
         )}
 
-        {/* 6-digit code input */}
+        {/* Expired warning */}
+        {expired && (
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-700 text-center flex items-center justify-center gap-2">
+            <AlertTriangle className="h-4 w-4" /> Code expired — request a new one below
+          </div>
+        )}
+
+        {/* Code input */}
         <div className="flex justify-center gap-2" onPaste={handlePaste}>
           {code.map((digit, i) => (
             <Input
@@ -146,16 +194,24 @@ function VerifyContent() {
               value={digit}
               onChange={e => handleChange(i, e.target.value)}
               onKeyDown={e => handleKeyDown(i, e)}
-              className="w-12 h-14 text-center text-xl font-bold"
-              disabled={loading}
+              className={`w-12 h-14 text-center text-xl font-bold ${expired ? 'opacity-50' : ''}`}
+              disabled={loading || expired}
             />
           ))}
         </div>
 
+        {/* Timer */}
+        {!expired && (
+          <div className={`flex items-center justify-center gap-1.5 text-sm font-medium ${timerColor}`}>
+            <Clock className="h-3.5 w-3.5" />
+            <span>Code expires in {formatTime(secondsLeft)}</span>
+          </div>
+        )}
+
         <Button
           className="w-full"
           onClick={() => handleVerify(code.join(''))}
-          disabled={loading || code.some(c => !c)}
+          disabled={loading || code.some(c => !c) || expired}
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
           Verify Email
