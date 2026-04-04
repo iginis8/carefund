@@ -40,7 +40,7 @@ export async function middleware(request: NextRequest) {
   const isOnboarding = pathname === '/onboarding';
 
   // Auth pages (login/signup)
-  const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isAuthPage = pathname === '/login' || pathname === '/signup' || pathname === '/verify';
 
   // Not logged in → redirect to login (except public pages)
   if (!user && (isProtected || isOnboarding)) {

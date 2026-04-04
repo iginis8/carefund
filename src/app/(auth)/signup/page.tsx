@@ -9,7 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, X } from 'lucide-react';
+
+const PASSWORD_RULES = [
+  { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
+  { label: 'One uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
+  { label: 'One lowercase letter', test: (p: string) => /[a-z]/.test(p) },
+  { label: 'One number', test: (p: string) => /[0-9]/.test(p) },
+  { label: 'One special character (!@#$%...)', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+];
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -19,9 +27,17 @@ export default function SignUpPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const allRulesPassed = PASSWORD_RULES.every(r => r.test(password));
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+
+    if (!allRulesPassed) {
+      setError('Please meet all password requirements.');
+      return;
+    }
+
     setLoading(true);
 
     const supabase = createClient();
@@ -31,6 +47,7 @@ export default function SignUpPage() {
       password,
       options: {
         data: { full_name: name },
+        emailRedirectTo: `${window.location.origin}/api/auth/callback`,
       },
     });
 
@@ -40,7 +57,8 @@ export default function SignUpPage() {
       return;
     }
 
-    router.push('/onboarding');
+    // Redirect to verification page
+    router.push(`/verify?email=${encodeURIComponent(email)}`);
   }
 
   return (
@@ -66,9 +84,36 @@ export default function SignUpPage() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 6 characters" minLength={6} required />
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Create a strong password"
+              required
+            />
+            {/* Live password requirements */}
+            {password.length > 0 && (
+              <div className="space-y-1.5 pt-1">
+                {PASSWORD_RULES.map((rule, i) => {
+                  const passed = rule.test(password);
+                  return (
+                    <div key={i} className="flex items-center gap-2">
+                      {passed ? (
+                        <Check className="h-3.5 w-3.5 text-green-500" />
+                      ) : (
+                        <X className="h-3.5 w-3.5 text-muted-foreground/40" />
+                      )}
+                      <span className={`text-xs ${passed ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+                        {rule.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full" disabled={loading || !allRulesPassed || !name || !email}>
             {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Create Account
           </Button>
