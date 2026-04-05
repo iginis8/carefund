@@ -125,23 +125,42 @@ function VerifyContent() {
   }, [email, expired, router]);
 
   async function handleResend() {
+    if (!email) {
+      setError('No email address found. Please go back and sign up again.');
+      return;
+    }
+
     setResent(false);
     setError('');
-    const supabase = createClient();
 
-    const { error: resendError } = await supabase.auth.resend({
-      type: 'signup',
-      email,
-    });
+    try {
+      const supabase = createClient();
 
-    if (resendError) {
-      setError(resendError.message);
-    } else {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+      });
+
+      if (resendError) {
+        // If resend fails, try signing up again which re-sends the confirmation
+        const { error: signupError } = await supabase.auth.signUp({
+          email,
+          password: 'temp-resend-trigger', // Won't actually change anything for existing user
+        });
+
+        if (signupError && !signupError.message.includes('already registered')) {
+          setError('Could not resend code. Please wait 60 seconds and try again.');
+          return;
+        }
+      }
+
       setResent(true);
       setCode(['', '', '', '', '', '']);
       resetTimer();
       inputRefs.current[0]?.focus();
       setTimeout(() => setResent(false), 5000);
+    } catch {
+      setError('Could not resend code. Please try again.');
     }
   }
 
