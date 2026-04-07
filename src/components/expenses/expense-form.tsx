@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import type { Expense, ExpenseCategory } from '@/types';
 import { EXPENSE_CATEGORIES } from '@/lib/constants';
-import { store } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,15 +15,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CheckCircle2, XCircle, Info, CircleDollarSign } from 'lucide-react';
+import { Info, CircleDollarSign } from 'lucide-react';
 
 interface ExpenseFormProps {
   expense?: Expense;
-  onSuccess: () => void;
+  onSave: (data: Omit<Expense, 'id' | 'user_id' | 'created_at'>) => Promise<void> | void;
   onCancel: () => void;
 }
 
-// Auto-detection rules: category → { deductible, taxCategory, explanation }
+// Auto-detection rules: category -> { deductible, taxCategory, explanation }
 const TAX_RULES: Record<ExpenseCategory, { deductible: boolean; taxCategory: string; explanation: string }> = {
   medical: {
     deductible: true,
@@ -75,7 +74,7 @@ const RECURRENCE_OPTIONS = [
   { value: 'yearly', label: 'Yearly' },
 ];
 
-export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) {
+export function ExpenseForm({ expense, onSave, onCancel }: ExpenseFormProps) {
   const [amount, setAmount] = useState(expense?.amount?.toString() ?? '');
   const [category, setCategory] = useState<ExpenseCategory | ''>(expense?.category ?? '');
   const [description, setDescription] = useState(expense?.description ?? '');
@@ -84,6 +83,7 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
   const [recurrenceInterval, setRecurrenceInterval] = useState<string>(
     expense?.recurrence_interval ?? 'monthly'
   );
+  const [submitting, setSubmitting] = useState(false);
   // Override: let user manually toggle if they disagree with auto-detection
   const [manualOverride, setManualOverride] = useState(false);
   const [overrideDeductible, setOverrideDeductible] = useState(expense?.is_tax_deductible ?? false);
@@ -95,7 +95,7 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
     ? (overrideDeductible ? (taxRule?.taxCategory || 'other') : '')
     : (taxRule?.taxCategory ?? '');
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     if (!amount || !category || !description || !date) return;
@@ -113,13 +113,13 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
         : undefined,
     };
 
-    if (expense) {
-      store.updateExpense(expense.id, data);
-    } else {
-      store.addExpense(data);
+    setSubmitting(true);
+    try {
+      await onSave(data);
+      onCancel();
+    } finally {
+      setSubmitting(false);
     }
-
-    onSuccess();
   }
 
   return (
@@ -177,7 +177,7 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
         />
       </div>
 
-      {/* Auto tax detection — shows after category is selected */}
+      {/* Auto tax detection -- shows after category is selected */}
       {category && taxRule && (
         <div className={`rounded-lg p-3 text-sm ${isDeductible ? 'bg-green-50 border border-green-200' : 'bg-muted border'}`}>
           <div className="flex items-start gap-2">
@@ -253,8 +253,8 @@ export function ExpenseForm({ expense, onSuccess, onCancel }: ExpenseFormProps) 
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
-          {expense ? 'Update Expense' : 'Add Expense'}
+        <Button type="submit" disabled={submitting}>
+          {submitting ? 'Saving...' : expense ? 'Update Expense' : 'Add Expense'}
         </Button>
       </div>
     </form>

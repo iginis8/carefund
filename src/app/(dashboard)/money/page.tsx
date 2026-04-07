@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { store } from '@/lib/store';
+import { useExpenses, useSavingsGoals } from '@/hooks/use-data';
 import type { SavingsGoal, SavingsGoalType } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -274,12 +275,12 @@ export default function MoneyPage() {
   const taxCredits = store.getTaxCredits();
   const eligibleCredits = taxCredits.filter(c => c.status === 'eligible');
   const totalTaxSavings = eligibleCredits.reduce((s, c) => s + c.estimated_value, 0);
-  const expenses = store.getExpenses();
+  const { expenses } = useExpenses();
   const deductibleExpenses = expenses.filter(e => e.is_tax_deductible);
   const totalDeductible = deductibleExpenses.reduce((s, e) => s + e.amount, 0);
 
-  // Savings
-  const [goals, setGoals] = useState<SavingsGoal[]>(store.getSavingsGoals());
+  // Savings from Supabase
+  const { goals, add: addGoal, update: updateGoal, remove: removeGoal } = useSavingsGoals();
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
   const [careCostInfoOpen, setCareCostInfoOpen] = useState(false);
   const totalSaved = goals.reduce((s, g) => s + g.current_amount, 0);
@@ -291,8 +292,8 @@ export default function MoneyPage() {
   const [durationYears, setDurationYears] = useState(3);
   const selectedCare = CARE_TYPES.find(c => c.value === selectedCareType)!;
 
-  function handleAddGoal(formData: FormData) {
-    store.addSavingsGoal({
+  async function handleAddGoal(formData: FormData) {
+    await addGoal({
       goal_name: formData.get('goal_name') as string,
       goal_type: (formData.get('goal_type') as SavingsGoalType) || 'general',
       target_amount: Number(formData.get('target_amount')),
@@ -301,7 +302,6 @@ export default function MoneyPage() {
       auto_save_amount: Number(formData.get('auto_save_amount') || 0) || undefined,
       auto_save_frequency: 'monthly',
     });
-    setGoals(store.getSavingsGoals());
     setGoalDialogOpen(false);
   }
 
@@ -443,7 +443,7 @@ export default function MoneyPage() {
                         <p className="font-medium text-sm">{goal.goal_name}</p>
                         <Badge variant="secondary" className={`text-[10px] mt-1 ${typeInfo.color}`}>{typeInfo.label}</Badge>
                       </div>
-                      <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={() => { store.deleteSavingsGoal(goal.id); setGoals(store.getSavingsGoals()); }}>
+                      <Button variant="ghost" size="icon-sm" className="text-destructive" onClick={async () => { await removeGoal(goal.id); }}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -454,9 +454,8 @@ export default function MoneyPage() {
                       </div>
                       <Progress value={Math.min(pct, 100)} />
                     </div>
-                    <Button variant="outline" size="sm" className="w-full" onClick={() => {
-                      store.updateSavingsGoal(goal.id, { current_amount: goal.current_amount + (goal.auto_save_amount || 100) });
-                      setGoals(store.getSavingsGoals());
+                    <Button variant="outline" size="sm" className="w-full" onClick={async () => {
+                      await updateGoal(goal.id, { current_amount: goal.current_amount + (goal.auto_save_amount || 100) });
                     }}>
                       + Add {fmt(goal.auto_save_amount || 100)}
                     </Button>

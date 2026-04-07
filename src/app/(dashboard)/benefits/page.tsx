@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { store } from '@/lib/store';
+import { useBenefits } from '@/hooks/use-data';
 import type { Benefit, BenefitStatus, BenefitType } from '@/types';
 import { BENEFIT_TYPES } from '@/lib/constants';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,15 +30,14 @@ const typeIcons: Record<BenefitType, typeof Shield> = {
 };
 
 export default function BenefitsPage() {
-  const [benefits, setBenefits] = useState<Benefit[]>(store.getBenefits());
+  const { benefits, loading, updateStatus } = useBenefits();
   const profile = store.getProfile();
 
   const activeBenefits = benefits.filter(b => b.status === 'active');
   const availableBenefits = benefits.filter(b => b.status === 'available');
 
-  function handleStatusChange(id: string, status: BenefitStatus) {
-    store.updateBenefitStatus(id, status);
-    setBenefits(store.getBenefits());
+  async function handleStatusChange(id: string, status: BenefitStatus) {
+    await updateStatus(id, status);
   }
 
   function BenefitCard({ benefit }: { benefit: Benefit }) {
@@ -117,6 +116,20 @@ export default function BenefitsPage() {
           </div>
         </CardContent>
       </Card>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Benefits & Programs</h1>
+          <p className="text-muted-foreground">Find and track caregiver support programs you&apos;re eligible for</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <p className="text-muted-foreground">Loading benefits...</p>
+        </div>
+      </div>
     );
   }
 

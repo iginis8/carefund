@@ -3,6 +3,7 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { store } from '@/lib/store';
+import { useExpenses, useSavingsGoals, useBenefits } from '@/hooks/use-data';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -111,11 +112,28 @@ function buildActions(profile: ReturnType<typeof store.getProfile>): NextAction[
 
 export default function DashboardPage() {
   const profile = store.getProfile();
-  const stats = store.getDashboardStats();
   const credits = store.getEligibleCredits();
-  const goals = store.getSavingsGoals();
-  const expenses = store.getExpenses();
+  const { expenses } = useExpenses();
+  const { goals } = useSavingsGoals();
+  const { benefits } = useBenefits();
   const recentExpenses = expenses.slice(0, 4);
+
+  // Compute stats from live data
+  const now = new Date();
+  const thisMonthExpenses = expenses.filter(e => { const d = new Date(e.date); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); });
+  const thisYearExpenses = expenses.filter(e => new Date(e.date).getFullYear() === now.getFullYear());
+  const totalSavingsTarget = goals.reduce((s, g) => s + g.target_amount, 0);
+  const totalSavingsCurrent = goals.reduce((s, g) => s + g.current_amount, 0);
+
+  const stats = {
+    total_expenses_this_month: thisMonthExpenses.reduce((s, e) => s + e.amount, 0),
+    total_expenses_this_year: thisYearExpenses.reduce((s, e) => s + e.amount, 0),
+    estimated_tax_savings: credits.reduce((s, c) => s + c.estimated_value, 0),
+    savings_goal_progress: totalSavingsTarget > 0 ? (totalSavingsCurrent / totalSavingsTarget) * 100 : 0,
+    active_benefits: benefits.filter(b => b.status === 'active').length,
+    eligible_credits: credits.length,
+  };
+
   const actions = useMemo(() => buildActions(profile), [profile]);
   const [completedActions, setCompletedActions] = useState<Set<string>>(new Set());
 
@@ -222,7 +240,7 @@ export default function DashboardPage() {
           <CardContent className="pt-4 pb-3">
             <p className="text-xs text-muted-foreground">Active Benefits</p>
             <p className="text-xl font-bold">{stats.active_benefits}</p>
-            <p className="text-[10px] text-muted-foreground">{store.getBenefits().filter(b => b.status === 'available').length} more available</p>
+            <p className="text-[10px] text-muted-foreground">{benefits.filter(b => b.status === 'available').length} more available</p>
           </CardContent>
         </Card>
       </div>

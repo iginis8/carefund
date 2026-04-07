@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { store } from '@/lib/store';
+import { useExpenses } from '@/hooks/use-data';
 import { EXPENSE_CATEGORIES } from '@/lib/constants';
 import type { Expense, ExpenseCategory } from '@/types';
 import { ExpenseForm } from '@/components/expenses/expense-form';
@@ -52,6 +52,7 @@ import {
   Trash2,
   RefreshCw,
   TrendingUp,
+  Loader2,
 } from 'lucide-react';
 
 const fmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -83,14 +84,16 @@ export default function ExpensesPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | undefined>();
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+  const { expenses: allExpenses, loading, add, update, remove } = useExpenses();
 
+  // Filter expenses by selected month/year client-side
   const expenses = useMemo(() => {
-    void refreshKey;
-    return store.getExpensesByMonth(selectedYear, selectedMonth);
-  }, [selectedYear, selectedMonth, refreshKey]);
+    return allExpenses.filter((e) => {
+      const d = new Date(e.date);
+      return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
+    });
+  }, [allExpenses, selectedYear, selectedMonth]);
 
   const filteredExpenses = useMemo(() => {
     if (categoryFilter === 'all') return expenses;
@@ -129,18 +132,32 @@ export default function ExpensesPage() {
     setDialogOpen(true);
   }
 
-  function handleDelete(id: string) {
-    store.deleteExpense(id);
-    refresh();
+  async function handleDelete(id: string) {
+    await remove(id);
   }
 
-  function handleFormSuccess() {
-    setDialogOpen(false);
-    setEditingExpense(undefined);
-    refresh();
-  }
+  const handleSave = useCallback(
+    async (data: Omit<Expense, 'id' | 'user_id' | 'created_at'>) => {
+      if (editingExpense) {
+        await update(editingExpense.id, data);
+      } else {
+        await add(data);
+      }
+      setDialogOpen(false);
+      setEditingExpense(undefined);
+    },
+    [editingExpense, update, add]
+  );
 
   const yearOptions = [2024, 2025, 2026, 2027];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="size-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-6">
@@ -169,7 +186,7 @@ export default function ExpensesPage() {
             </DialogHeader>
             <ExpenseForm
               expense={editingExpense}
-              onSuccess={handleFormSuccess}
+              onSave={handleSave}
               onCancel={() => setDialogOpen(false)}
             />
           </DialogContent>
