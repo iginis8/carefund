@@ -121,12 +121,16 @@
   * {
     @apply border-border outline-ring/50;
   }
-  html, body {
+  html {
+    @apply bg-background text-foreground font-sans;
+    height: 100dvh;
+    height: -webkit-fill-available;
+  }
+  body {
     @apply bg-background text-foreground;
+    height: 100dvh;
+    height: -webkit-fill-available;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
-  }
-  html {
-    @apply font-sans;
   }
 }
