@@ -16,16 +16,18 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Bot, Send, User, Sparkles, Crown, Lock, Loader2,
   DollarSign, Shield, PiggyBank, HelpCircle, FileText, Heart,
-  Plus, Trash2, ChevronDown, History,
+  Plus, Trash2, ChevronDown, History, CheckCircle2, Receipt,
 } from 'lucide-react';
 
 const STARTER_QUESTIONS = [
   { text: 'What tax credits am I missing?', icon: DollarSign },
+  { text: 'How do I claim all my credits?', icon: CheckCircle2 },
   { text: 'How do I apply for FMLA?', icon: Shield },
   { text: 'FSA vs dependent care credit?', icon: HelpCircle },
   { text: 'How much should my emergency fund be?', icon: PiggyBank },
   { text: 'Explain Medicaid spend-down', icon: FileText },
   { text: 'Best way to save while caregiving?', icon: Heart },
+  { text: 'What deductions can I take this year?', icon: Receipt },
 ];
 
 const FREE_MESSAGE_LIMIT = 5;
