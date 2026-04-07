@@ -42,7 +42,7 @@ export default function SignUpPage() {
 
     const supabase = createClient();
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -53,6 +53,13 @@ export default function SignUpPage() {
 
     if (signUpError) {
       setError(signUpError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Supabase returns empty identities array if email already exists
+    if (data?.user?.identities?.length === 0) {
+      setError('ACCOUNT_EXISTS');
       setLoading(false);
       return;
     }
@@ -69,11 +76,18 @@ export default function SignUpPage() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
+          {error && error === 'ACCOUNT_EXISTS' ? (
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-3 text-sm text-amber-800">
+              <p className="font-medium">An account with this email already exists.</p>
+              <p className="mt-1">
+                <Link href="/login" className="text-primary hover:underline font-medium">Sign in instead &rarr;</Link>
+              </p>
+            </div>
+          ) : error ? (
             <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-3 py-2 text-sm text-destructive">
               {error}
             </div>
-          )}
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input id="name" value={name} onChange={e => setName(e.target.value)} placeholder="Sarah Johnson" required />
