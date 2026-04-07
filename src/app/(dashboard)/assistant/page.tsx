@@ -76,7 +76,6 @@ export default function AssistantPage() {
   const [streaming, setStreaming] = useState(() => isRequestActive());
   const [error, setError] = useState<string | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
   const isPremium = store.isPremium();
   const profile = store.getProfile();
@@ -118,10 +117,7 @@ export default function AssistantPage() {
     } catch {}
   }, [activeThreadId]);
 
-  // Auto-scroll
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // No auto-scroll — user controls their own scroll position
 
   // Close history dropdown on outside click
   useEffect(() => {
@@ -370,7 +366,6 @@ export default function AssistantPage() {
                 )}
               </div>
             ))}
-            <div ref={messagesEndRef} />
           </>
         )}
       </div>

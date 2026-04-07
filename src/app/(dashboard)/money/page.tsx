@@ -193,13 +193,13 @@ export default function MoneyPage() {
           </Card>
 
           {/* AI Recommendations — Premium */}
-          <PremiumGate feature="AI Tax Recommendations">
-            <Card className="border-amber-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-amber-500" /> AI Tax Recommendations
-                </CardTitle>
-              </CardHeader>
+          <Card className="border-amber-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Crown className="h-4 w-4 text-amber-500" /> AI Tax Recommendations
+              </CardTitle>
+            </CardHeader>
+            <PremiumGate feature="AI Tax Recommendations">
               <CardContent className="space-y-3">
                 <div className="rounded-lg bg-amber-50 border border-amber-100 p-3">
                   <p className="text-sm font-medium">You may be double-dipping on deductions</p>
@@ -214,8 +214,8 @@ export default function MoneyPage() {
                   <p className="text-xs text-muted-foreground mt-1">You&apos;re not tracking mileage for care-related trips. At $0.67/mile, your estimated 15 trips/month could add $1,800/year in deductions.</p>
                 </div>
               </CardContent>
-            </Card>
-          </PremiumGate>
+            </PremiumGate>
+          </Card>
         </TabsContent>
 
         {/* SAVINGS TAB */}
