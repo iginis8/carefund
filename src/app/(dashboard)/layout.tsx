@@ -47,8 +47,8 @@ export default function DashboardLayout({
           <span className="text-sm font-semibold">CareFund</span>
         </header>
 
-        {/* Page content — single scroll container, no bounce */}
-        <main className="flex-1 overflow-y-auto overscroll-none p-4 md:p-6 lg:p-8">
+        {/* Page content — single scroll container, no bounce, safe area for iOS */}
+        <main className="flex-1 overflow-y-auto overscroll-none p-4 pb-20 md:p-6 md:pb-6 lg:p-8 lg:pb-8">
           {children}
         </main>
       </div>
