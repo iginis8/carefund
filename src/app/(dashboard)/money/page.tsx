@@ -281,6 +281,7 @@ export default function MoneyPage() {
   // Savings
   const [goals, setGoals] = useState<SavingsGoal[]>(store.getSavingsGoals());
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
+  const [careCostInfoOpen, setCareCostInfoOpen] = useState(false);
   const totalSaved = goals.reduce((s, g) => s + g.current_amount, 0);
   const totalTarget = goals.reduce((s, g) => s + g.target_amount, 0);
 
@@ -514,8 +515,43 @@ export default function MoneyPage() {
           <PremiumGate feature="Care Cost Calculator & Projections">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2"><Calculator className="h-4 w-4" /> Care Cost Calculator</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm flex items-center gap-2"><Calculator className="h-4 w-4" /> Care Cost Calculator</CardTitle>
+                <button type="button" onClick={() => setCareCostInfoOpen(true)} className="text-xs text-primary font-medium hover:underline">
+                  What is this?
+                </button>
+              </div>
             </CardHeader>
+
+            {/* Info overlay */}
+            {careCostInfoOpen && (
+              <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setCareCostInfoOpen(false)} />
+                <div className="relative bg-background rounded-xl border shadow-xl p-6 max-w-md w-full z-10">
+                  <h3 className="text-lg font-bold mb-3 flex items-center gap-2">
+                    <Calculator className="h-5 w-5 text-primary" /> Care Cost Calculator
+                  </h3>
+                  <div className="space-y-3 text-sm text-muted-foreground">
+                    <p>
+                      The Care Cost Calculator helps you <span className="text-foreground font-medium">compare the real costs</span> of different care options for your loved one so you can plan ahead financially.
+                    </p>
+                    <p>
+                      It shows you the <span className="text-foreground font-medium">average monthly, annual, and multi-year costs</span> for:
+                    </p>
+                    <ul className="space-y-1.5 pl-4">
+                      <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /> <span><strong>Home Health Aide</strong> — a professional caregiver coming to your home</span></li>
+                      <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /> <span><strong>Adult Day Care</strong> — supervised daytime programs</span></li>
+                      <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /> <span><strong>Assisted Living</strong> — residential facilities with daily support</span></li>
+                      <li className="flex items-start gap-2"><CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /> <span><strong>Nursing Home</strong> — 24/7 medical care facilities</span></li>
+                    </ul>
+                    <p>
+                      Use it to decide what&apos;s affordable, when to transition care levels, and how much to save in your care fund.
+                    </p>
+                  </div>
+                  <Button className="w-full mt-4" onClick={() => setCareCostInfoOpen(false)}>Got it</Button>
+                </div>
+              </div>
+            )}
             <CardContent className="space-y-4">
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-2">
