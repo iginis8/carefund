@@ -36,7 +36,7 @@ function PremiumGate({ children, feature }: { children: React.ReactNode; feature
   if (isPremium) return <>{children}</>;
   return (
     <div className="relative">
-      <div className="pointer-events-none opacity-40 blur-[1px] select-none">{children}</div>
+      <div className="pointer-events-none opacity-30 blur-[6px] select-none">{children}</div>
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="rounded-xl bg-background/95 border shadow-lg p-5 text-center max-w-xs">
           <Lock className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
