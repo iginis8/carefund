@@ -47,7 +47,7 @@ export function Sidebar({ className, onNavigate }: SidebarProps) {
     .slice(0, 2) || 'U'
 
   return (
-    <div className={cn('flex h-full flex-col bg-sidebar text-sidebar-foreground', className)}>
+    <div className={cn('flex h-full flex-col bg-sidebar text-sidebar-foreground pb-[env(safe-area-inset-bottom)]', className)}>
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-5 py-5">
         <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
