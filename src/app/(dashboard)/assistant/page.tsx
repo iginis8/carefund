@@ -21,7 +21,7 @@ import {
 
 const STARTER_QUESTIONS = [
   { text: 'What tax credits am I missing?', icon: DollarSign },
-  { text: 'How do I claim all my credits?', icon: CheckCircle2 },
+  { text: 'How do I guarantee all my credits?', icon: CheckCircle2 },
   { text: 'How do I apply for FMLA?', icon: Shield },
   { text: 'FSA vs dependent care credit?', icon: HelpCircle },
   { text: 'How much should my emergency fund be?', icon: PiggyBank },
@@ -234,7 +234,7 @@ export default function AssistantPage() {
   const hasHistory = sortedThreads.length > 0;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-3rem)] max-w-3xl mx-auto">
+    <div className="flex flex-col h-[calc(100dvh-5rem)] md:h-[calc(100dvh-4rem)] max-w-3xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between py-3">
         <div className="flex items-center gap-3">

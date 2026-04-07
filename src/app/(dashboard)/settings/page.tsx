@@ -251,12 +251,10 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <p className="text-sm font-medium">Everything in Free, plus:</p>
               {[
-                'Advanced tax optimization with AI recommendations',
+                'AI tax recommendations personalized to your situation',
+                'Unlimited AI assistant conversations',
                 'Unlimited savings goals with auto-save automation',
-                'Employer benefits matching & application assistance',
-                'Care cost projections with inflation modeling',
-                'Monthly financial health report',
-                'Priority support from caregiver finance experts',
+                'Care cost calculator with projections',
                 'CSV & PDF export of all data',
                 'Medicaid planning tools with state-specific guidance',
               ].map((feature, i) => (
