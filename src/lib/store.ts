@@ -37,32 +37,11 @@ function saveProfile(p: Profile) {
 
 let profile: Profile = loadProfile();
 
-let expenses: Expense[] = [
-  { id: '1', user_id: DEMO_USER_ID, amount: 450, category: 'medical', description: 'Monthly prescription medications', date: '2026-03-28', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-03-28T00:00:00Z' },
-  { id: '2', user_id: DEMO_USER_ID, amount: 180, category: 'transportation', description: 'Gas & tolls for doctor visits', date: '2026-03-25', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: false, created_at: '2026-03-25T00:00:00Z' },
-  { id: '3', user_id: DEMO_USER_ID, amount: 1200, category: 'professional_care', description: 'Part-time home health aide (weekdays)', date: '2026-03-20', is_tax_deductible: true, tax_category: 'dependent_care', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-03-20T00:00:00Z' },
-  { id: '4', user_id: DEMO_USER_ID, amount: 85, category: 'supplies', description: 'Adult incontinence supplies', date: '2026-03-15', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-03-15T00:00:00Z' },
-  { id: '5', user_id: DEMO_USER_ID, amount: 350, category: 'respite_care', description: 'Weekend respite caregiver', date: '2026-03-10', is_tax_deductible: false, is_recurring: false, created_at: '2026-03-10T00:00:00Z' },
-  { id: '6', user_id: DEMO_USER_ID, amount: 2400, category: 'home_modification', description: 'Bathroom grab bars & walk-in shower conversion', date: '2026-02-20', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: false, created_at: '2026-02-20T00:00:00Z' },
-  { id: '7', user_id: DEMO_USER_ID, amount: 450, category: 'medical', description: 'Monthly prescription medications', date: '2026-02-28', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-02-28T00:00:00Z' },
-  { id: '8', user_id: DEMO_USER_ID, amount: 1200, category: 'professional_care', description: 'Part-time home health aide (weekdays)', date: '2026-02-20', is_tax_deductible: true, tax_category: 'dependent_care', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-02-20T00:00:00Z' },
-  { id: '9', user_id: DEMO_USER_ID, amount: 120, category: 'transportation', description: 'Gas for specialist appointments', date: '2026-02-12', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: false, created_at: '2026-02-12T00:00:00Z' },
-  { id: '10', user_id: DEMO_USER_ID, amount: 85, category: 'supplies', description: 'Adult incontinence supplies', date: '2026-02-15', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-02-15T00:00:00Z' },
-  { id: '11', user_id: DEMO_USER_ID, amount: 450, category: 'medical', description: 'Monthly prescription medications', date: '2026-01-28', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-01-28T00:00:00Z' },
-  { id: '12', user_id: DEMO_USER_ID, amount: 1200, category: 'professional_care', description: 'Part-time home health aide (weekdays)', date: '2026-01-20', is_tax_deductible: true, tax_category: 'dependent_care', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-01-20T00:00:00Z' },
-  // April 2026 data (use T12:00 to avoid UTC date-shift issues)
-  { id: '13', user_id: DEMO_USER_ID, amount: 450, category: 'medical', description: 'Monthly prescription medications', date: '2026-04-01T12:00:00', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-04-01T12:00:00Z' },
-  { id: '14', user_id: DEMO_USER_ID, amount: 1200, category: 'professional_care', description: 'Part-time home health aide (weekdays)', date: '2026-04-01T12:00:00', is_tax_deductible: true, tax_category: 'dependent_care', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-04-01T12:00:00Z' },
-  { id: '15', user_id: DEMO_USER_ID, amount: 85, category: 'supplies', description: 'Adult incontinence supplies', date: '2026-04-02T12:00:00', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: true, recurrence_interval: 'monthly', created_at: '2026-04-02T12:00:00Z' },
-  { id: '16', user_id: DEMO_USER_ID, amount: 210, category: 'transportation', description: 'Uber to neurologist appointment', date: '2026-04-03T12:00:00', is_tax_deductible: true, tax_category: 'medical_expense', is_recurring: false, created_at: '2026-04-03T12:00:00Z' },
-  { id: '17', user_id: DEMO_USER_ID, amount: 350, category: 'respite_care', description: 'Weekend respite caregiver', date: '2026-04-02T12:00:00', is_tax_deductible: false, is_recurring: false, created_at: '2026-04-02T12:00:00Z' },
-];
+// Start empty — users add their own expenses
+let expenses: Expense[] = [];
 
-let savingsGoals: SavingsGoal[] = [
-  { id: '1', user_id: DEMO_USER_ID, goal_name: 'Caregiving Emergency Fund', goal_type: 'emergency', target_amount: 10000, current_amount: 3500, deadline: '2026-12-31', auto_save_amount: 200, auto_save_frequency: 'monthly', created_at: '2024-06-01T00:00:00Z' },
-  { id: '2', user_id: DEMO_USER_ID, goal_name: 'Retirement Catch-Up', goal_type: 'retirement_catchup', target_amount: 50000, current_amount: 8200, deadline: '2030-12-31', auto_save_amount: 400, auto_save_frequency: 'monthly', created_at: '2024-01-01T00:00:00Z' },
-  { id: '3', user_id: DEMO_USER_ID, goal_name: 'Mom\'s Care Reserve', goal_type: 'care_fund', target_amount: 25000, current_amount: 12000, deadline: '2027-06-30', auto_save_amount: 500, auto_save_frequency: 'monthly', created_at: '2024-03-01T00:00:00Z' },
-];
+// Start empty — users create their own goals
+let savingsGoals: SavingsGoal[] = [];
 
 const taxCredits: TaxCredit[] = [
   {
@@ -209,14 +188,8 @@ const taxCredits: TaxCredit[] = [
   },
 ];
 
-const benefits: Benefit[] = [
-  { id: '1', benefit_name: 'Family and Medical Leave Act (FMLA)', provider: 'Federal Government', type: 'fmla', description: 'Up to 12 weeks of unpaid, job-protected leave per year for family caregiving. Applies to employers with 50+ employees.', eligibility_criteria: ['Employed at company with 50+ employees', 'Worked 1,250+ hours in past 12 months', 'Employed for at least 12 months'], status: 'available' },
-  { id: '2', benefit_name: 'California Paid Family Leave', provider: 'State of California', type: 'state_program', description: 'Up to 8 weeks of partial pay (60-70% of wages) to care for a seriously ill family member.', eligibility_criteria: ['Work in California', 'Pay into State Disability Insurance (SDI)', 'Care recipient has serious health condition'], status: 'available', state: 'CA' },
-  { id: '3', benefit_name: 'National Family Caregiver Support Program', provider: 'Administration on Aging', type: 'federal_program', description: 'Provides respite care, counseling, training, and supplemental services for family caregivers of older adults.', eligibility_criteria: ['Care recipient is 60+', 'Caregiver provides informal care'], application_url: 'https://eldercare.acl.gov/', status: 'available' },
-  { id: '4', benefit_name: 'Employee Assistance Program (EAP)', provider: 'Employer', type: 'eap', description: 'Free, confidential counseling and referral services for employees dealing with personal issues including caregiving stress.', eligibility_criteria: ['Employer offers EAP benefit'], status: 'active' },
-  { id: '5', benefit_name: 'AARP Caregiving Resources', provider: 'AARP', type: 'nonprofit', description: 'Free caregiving guides, legal resources, care provider directories, and community support for family caregivers.', eligibility_criteria: ['No specific requirements'], application_url: 'https://www.aarp.org/caregiving/', status: 'available' },
-  { id: '6', benefit_name: 'Medicaid Home & Community-Based Services', provider: 'Federal/State Government', type: 'federal_program', description: 'Waiver programs that may cover home care services, allowing care recipients to remain at home rather than in a facility.', eligibility_criteria: ['Care recipient meets Medicaid income limits', 'State offers HCBS waiver', 'Medical need for institutional-level care'], status: 'available', state: 'CA' },
-];
+// Benefits loaded from comprehensive state database
+import { getBenefitsForState } from './benefits-data';
 
 let nextId = 20;
 function generateId() {
@@ -310,11 +283,13 @@ export const store = {
     savingsGoals = savingsGoals.filter(g => g.id !== id);
   },
 
-  // Benefits
-  getBenefits: () => benefits,
-  getBenefitsByType: (type: string) => benefits.filter(b => b.type === type),
+  // Benefits — loaded from comprehensive 50-state database, filtered by user's state
+  getBenefits: () => getBenefitsForState(profile.state),
+  getBenefitsByType: (type: string) => getBenefitsForState(profile.state).filter(b => b.type === type),
   updateBenefitStatus: (id: string, status: Benefit['status']) => {
-    const b = benefits.find(b => b.id === id);
+    // Status changes are local only for now
+    const allBenefits = getBenefitsForState(profile.state);
+    const b = allBenefits.find(b => b.id === id);
     if (b) b.status = status;
     return b;
   },
@@ -336,7 +311,7 @@ export const store = {
       total_expenses_this_year: thisYear.reduce((sum, e) => sum + e.amount, 0),
       estimated_tax_savings: eligibleCredits.reduce((sum, tc) => sum + tc.estimated_value, 0),
       savings_goal_progress: totalSavingsTarget > 0 ? (totalSavingsCurrent / totalSavingsTarget) * 100 : 0,
-      active_benefits: benefits.filter(b => b.status === 'active').length,
+      active_benefits: getBenefitsForState(profile.state).filter(b => b.status === 'active').length,
       eligible_credits: eligibleCredits.length,
     };
   },
