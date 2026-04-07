@@ -13,16 +13,233 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import {
   DollarSign, CheckCircle2, ExternalLink, AlertCircle, ChevronRight,
   PiggyBank, Plus, Target, TrendingUp, AlertTriangle, Clock, Trash2, Edit2,
-  Calculator, ArrowRight, Lock, Sparkles, Crown,
+  Calculator, ArrowRight, Lock, Sparkles, Crown, Lightbulb, Car, Receipt, Shield,
 } from 'lucide-react';
 import { CARE_TYPES } from '@/lib/constants';
 
 const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+
+// --- Smart Recommendations Engine ---
+// Generates personalized, actionable recommendations based on user's actual data
+
+interface Recommendation {
+  id: string;
+  title: string;
+  description: string;
+  value?: string;
+  priority: 'high' | 'medium' | 'low';
+  icon: typeof DollarSign;
+  color: string;
+  action?: { label: string; href: string };
+}
+
+function generateRecommendations(): Recommendation[] {
+  const profile = store.getProfile();
+  const expenses = store.getExpenses();
+  const credits = store.getEligibleCredits();
+  const goals = store.getSavingsGoals();
+  const benefits = store.getBenefits();
+  const recs: Recommendation[] = [];
+
+  const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
+  const deductibleTotal = expenses.filter(e => e.is_tax_deductible).reduce((s, e) => s + e.amount, 0);
+  const hasTransportExpenses = expenses.some(e => e.category === 'transportation');
+  const availableBenefits = benefits.filter(b => b.status === 'available');
+  const emergencyGoal = goals.find(g => g.goal_type === 'emergency');
+  const agiThreshold = profile.annual_income * 0.075;
+
+  // 1. Mileage tracking
+  if (!hasTransportExpenses && profile.care_hours_per_week > 10) {
+    const estimatedMiles = profile.care_hours_per_week * 2 * 52; // rough: 2 miles per care hour per week
+    const mileageDeduction = Math.round(estimatedMiles * 0.67);
+    recs.push({
+      id: 'mileage',
+      title: `Track mileage to deduct ~${fmt(mileageDeduction)}/year`,
+      description: `You're caregiving ${profile.care_hours_per_week} hrs/week but haven't logged any transportation expenses. At $0.67/mile, driving to appointments and errands adds up fast.`,
+      value: fmt(mileageDeduction),
+      priority: 'high',
+      icon: Car,
+      color: 'bg-green-50 border-green-200',
+      action: { label: 'Add Transport Expense', href: '/expenses' },
+    });
+  }
+
+  // 2. Medical expense threshold
+  if (deductibleTotal > 0 && deductibleTotal < agiThreshold) {
+    const gap = Math.round(agiThreshold - deductibleTotal);
+    recs.push({
+      id: 'agi-threshold',
+      title: `You're ${fmt(gap)} away from the medical deduction threshold`,
+      description: `Medical expenses are deductible above 7.5% of your AGI (${fmt(agiThreshold)}). Track every prescription, copay, supply, and care-related cost to cross this threshold.`,
+      value: fmt(gap) + ' to go',
+      priority: 'high',
+      icon: Target,
+      color: 'bg-amber-50 border-amber-200',
+      action: { label: 'Log Expenses', href: '/expenses' },
+    });
+  } else if (deductibleTotal >= agiThreshold) {
+    recs.push({
+      id: 'agi-exceeded',
+      title: `You've crossed the medical deduction threshold`,
+      description: `Your deductible expenses (${fmt(deductibleTotal)}) exceed 7.5% of your AGI. Every additional medical expense is now directly deductible. Keep tracking!`,
+      priority: 'low',
+      icon: CheckCircle2,
+      color: 'bg-green-50 border-green-200',
+    });
+  }
+
+  // 3. No expenses tracked at all
+  if (expenses.length === 0) {
+    recs.push({
+      id: 'no-expenses',
+      title: 'Start tracking expenses to unlock deductions',
+      description: `You haven't logged any care expenses yet. Every receipt is a potential deduction — medications, supplies, home modifications, transportation to appointments.`,
+      priority: 'high',
+      icon: Receipt,
+      color: 'bg-blue-50 border-blue-200',
+      action: { label: 'Add First Expense', href: '/expenses' },
+    });
+  }
+
+  // 4. Unapplied benefits
+  if (availableBenefits.length > 3) {
+    recs.push({
+      id: 'benefits-available',
+      title: `You qualify for ${availableBenefits.length} programs you haven't applied to`,
+      description: `Including ${availableBenefits[0].benefit_name} and ${availableBenefits.length - 1} more. These could provide paid leave, respite care, and direct financial assistance.`,
+      priority: 'high',
+      icon: Shield,
+      color: 'bg-teal-50 border-teal-200',
+      action: { label: 'See Programs', href: '/benefits' },
+    });
+  }
+
+  // 5. No emergency fund
+  if (!emergencyGoal) {
+    const recommended = Math.round(profile.annual_income * 0.1);
+    recs.push({
+      id: 'no-emergency',
+      title: `Set up a caregiving emergency fund (${fmt(recommended)} recommended)`,
+      description: `Caregivers face unexpected costs — sudden hospital visits, emergency respite, equipment breaks. A fund covering 2-3 months of care expenses provides critical peace of mind.`,
+      value: fmt(recommended),
+      priority: 'medium',
+      icon: PiggyBank,
+      color: 'bg-purple-50 border-purple-200',
+      action: { label: 'Create Goal', href: '/money' },
+    });
+  } else if (emergencyGoal.current_amount < emergencyGoal.target_amount * 0.25) {
+    recs.push({
+      id: 'low-emergency',
+      title: `Emergency fund is only ${Math.round((emergencyGoal.current_amount / emergencyGoal.target_amount) * 100)}% funded`,
+      description: `You have ${fmt(emergencyGoal.current_amount)} of your ${fmt(emergencyGoal.target_amount)} goal. Try to contribute ${fmt(Math.min(200, emergencyGoal.target_amount - emergencyGoal.current_amount))} this month.`,
+      priority: 'medium',
+      icon: AlertTriangle,
+      color: 'bg-amber-50 border-amber-200',
+    });
+  }
+
+  // 6. FSA opportunity
+  if (profile.employment_status === 'full_time' && !credits.find(c => c.credit_name.includes('FSA'))) {
+    recs.push({
+      id: 'fsa',
+      title: 'Enroll in a Dependent Care FSA to save up to $5,000 pre-tax',
+      description: `As a full-time employee, you may be able to set aside up to $5,000 pre-tax for dependent care expenses. This reduces your taxable income and saves you ~$1,250 in taxes.`,
+      value: fmt(1250) + ' savings',
+      priority: 'medium',
+      icon: DollarSign,
+      color: 'bg-green-50 border-green-200',
+    });
+  }
+
+  // 7. Retirement catch-up
+  if (profile.care_hours_per_week > 20 && !goals.find(g => g.goal_type === 'retirement_catchup')) {
+    const annualImpact = Math.round(profile.annual_income * 0.06);
+    recs.push({
+      id: 'retirement',
+      title: `Caregiving may cost you ${fmt(annualImpact)}/year in retirement savings`,
+      description: `At ${profile.care_hours_per_week} hrs/week of caregiving, you're likely missing 401(k) contributions and employer matches. Consider a catch-up savings goal.`,
+      value: fmt(annualImpact) + '/year',
+      priority: 'medium',
+      icon: TrendingUp,
+      color: 'bg-blue-50 border-blue-200',
+      action: { label: 'Create Retirement Goal', href: '/money' },
+    });
+  }
+
+  // 8. Paid leave available
+  const paidLeave = availableBenefits.find(b => b.benefit_name.toLowerCase().includes('paid') && b.benefit_name.toLowerCase().includes('leave'));
+  if (paidLeave) {
+    recs.push({
+      id: 'paid-leave',
+      title: `Your state offers paid family leave — have you applied?`,
+      description: `${paidLeave.benefit_name} could provide weeks of partial income while you provide care. Many caregivers don't know they're eligible.`,
+      priority: 'high',
+      icon: Sparkles,
+      color: 'bg-teal-50 border-teal-200',
+      action: { label: 'Apply Now', href: '/benefits' },
+    });
+  }
+
+  // Sort by priority
+  const priorityOrder = { high: 0, medium: 1, low: 2 };
+  return recs.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+}
+
+function SmartRecommendations() {
+  const recs = generateRecommendations();
+
+  if (recs.length === 0) {
+    return (
+      <Card className="p-8 text-center">
+        <CheckCircle2 className="h-10 w-10 text-green-500 mx-auto mb-3" />
+        <p className="font-semibold">You're in great shape!</p>
+        <p className="text-sm text-muted-foreground mt-1">No new recommendations right now. Keep tracking expenses and we'll alert you when we find opportunities.</p>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">{recs.length} personalized recommendations based on your profile</p>
+      </div>
+      {recs.map(rec => {
+        const Icon = rec.icon;
+        return (
+          <Card key={rec.id} className={`${rec.color}`}>
+            <CardContent className="py-4">
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 mt-0.5">
+                  <Icon className="h-5 w-5 text-foreground/70" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-semibold">{rec.title}</p>
+                    {rec.priority === 'high' && (
+                      <Badge className="bg-primary/10 text-primary text-[10px] shrink-0">High impact</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{rec.description}</p>
+                  {rec.action && (
+                    <Link href={rec.action.href} className="inline-block mt-2">
+                      <Button size="sm" variant="outline">
+                        {rec.action.label} <ChevronRight className="ml-1 h-3 w-3" />
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
 
 const goalTypeLabels: Record<SavingsGoalType, { label: string; color: string }> = {
   emergency: { label: 'Emergency', color: 'bg-amber-100 text-amber-800' },
@@ -67,17 +284,6 @@ export default function MoneyPage() {
   const totalSaved = goals.reduce((s, g) => s + g.current_amount, 0);
   const totalTarget = goals.reduce((s, g) => s + g.target_amount, 0);
 
-  // Tax checklist
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
-  const checklistItems = [
-    'Gather all medical receipts',
-    'Total care-related transportation costs',
-    'Document home modification expenses',
-    'Check dependent care FSA enrollment',
-    'File Form 2441 (Dependent Care Credit)',
-    'Calculate medical expenses above 7.5% AGI',
-    'Check state caregiver credit eligibility',
-  ];
 
   // Care calculator
   const [selectedCareType, setSelectedCareType] = useState(CARE_TYPES[0].value);
@@ -125,7 +331,7 @@ export default function MoneyPage() {
           <TabsTrigger value="credits">Tax Credits</TabsTrigger>
           <TabsTrigger value="savings">Savings</TabsTrigger>
           <TabsTrigger value="planner">Care Costs</TabsTrigger>
-          <TabsTrigger value="checklist">Checklist</TabsTrigger>
+          <TabsTrigger value="recommendations">For You</TabsTrigger>
         </TabsList>
 
         {/* TAX CREDITS TAB */}
@@ -192,30 +398,6 @@ export default function MoneyPage() {
             </CardContent>
           </Card>
 
-          {/* AI Recommendations — Premium */}
-          <Card className="border-amber-200">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Crown className="h-4 w-4 text-amber-500" /> AI Tax Recommendations
-              </CardTitle>
-            </CardHeader>
-            <PremiumGate feature="AI Tax Recommendations">
-              <CardContent className="space-y-3">
-                <div className="rounded-lg bg-amber-50 border border-amber-100 p-3">
-                  <p className="text-sm font-medium">You may be double-dipping on deductions</p>
-                  <p className="text-xs text-muted-foreground mt-1">Your medical expenses ($4,800) and dependent care credit ($3,600) overlap. Consider shifting $1,200 to your FSA for maximum benefit.</p>
-                </div>
-                <div className="rounded-lg bg-blue-50 border border-blue-100 p-3">
-                  <p className="text-sm font-medium">State credit expiring soon</p>
-                  <p className="text-xs text-muted-foreground mt-1">California&apos;s caregiver credit application deadline is October 15. Based on your profile, you qualify for up to $2,500.</p>
-                </div>
-                <div className="rounded-lg bg-green-50 border border-green-100 p-3">
-                  <p className="text-sm font-medium">Increase your deductions by $1,800</p>
-                  <p className="text-xs text-muted-foreground mt-1">You&apos;re not tracking mileage for care-related trips. At $0.67/mile, your estimated 15 trips/month could add $1,800/year in deductions.</p>
-                </div>
-              </CardContent>
-            </PremiumGate>
-          </Card>
         </TabsContent>
 
         {/* SAVINGS TAB */}
@@ -339,9 +521,18 @@ export default function MoneyPage() {
                 <div className="space-y-2">
                   <Label>Type of Care</Label>
                   <Select value={selectedCareType} onValueChange={(v) => { if (v) setSelectedCareType(v as typeof selectedCareType); }}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full">
+                      <SelectValue>{() => selectedCare.label}</SelectValue>
+                    </SelectTrigger>
                     <SelectContent>
-                      {CARE_TYPES.map(ct => <SelectItem key={ct.value} value={ct.value}>{ct.label}</SelectItem>)}
+                      {CARE_TYPES.map(ct => (
+                        <SelectItem key={ct.value} value={ct.value}>
+                          <span className="flex items-center justify-between w-full gap-2">
+                            <span>{ct.label}</span>
+                            <span className="text-muted-foreground text-xs">{fmt(ct.avg_monthly_cost)}/mo</span>
+                          </span>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -379,27 +570,9 @@ export default function MoneyPage() {
           </PremiumGate>
         </TabsContent>
 
-        {/* CHECKLIST TAB */}
-        <TabsContent value="checklist" className="space-y-4 mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">Tax Filing Preparation</CardTitle>
-                <Badge variant="secondary">{Object.values(checklist).filter(Boolean).length}/{checklistItems.length} done</Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {checklistItems.map((item, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Checkbox
-                    checked={!!checklist[item]}
-                    onCheckedChange={(checked) => setChecklist(prev => ({ ...prev, [item]: !!checked }))}
-                  />
-                  <span className={`text-sm ${checklist[item] ? 'line-through text-muted-foreground' : ''}`}>{item}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        {/* SMART RECOMMENDATIONS TAB */}
+        <TabsContent value="recommendations" className="space-y-4 mt-4">
+          <SmartRecommendations />
         </TabsContent>
       </Tabs>
     </div>

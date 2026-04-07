@@ -302,7 +302,8 @@ export const store = {
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     });
     const thisYear = expenses.filter(e => new Date(e.date).getFullYear() === now.getFullYear());
-    const eligibleCredits = taxCredits.filter(tc => tc.status === 'eligible');
+    const userState = profile.state;
+    const eligibleCredits = taxCredits.filter(tc => tc.status === 'eligible' && (!tc.state || tc.state === userState));
     const totalSavingsTarget = savingsGoals.reduce((sum, g) => sum + g.target_amount, 0);
     const totalSavingsCurrent = savingsGoals.reduce((sum, g) => sum + g.current_amount, 0);
 
